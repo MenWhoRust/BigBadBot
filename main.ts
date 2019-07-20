@@ -9,6 +9,7 @@ client.once('ready', () => {
 
 client.on('message', (message: Message) => {
     if (!message.content.startsWith(env.prefix) || message.author.bot) return;
+    fetchWallpaper('').then((s) => message.channel.send(s));
 });
 
 client.login(env.key);

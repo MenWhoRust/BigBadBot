@@ -1,7 +1,7 @@
 export interface IKonachanPostsCollection {
     count: number;
     offset: number;
-    post: IKonachanPost[];
+    post: IKonachanPost;
 }
 interface IKonachanPost {
     actual_preview_height: string;

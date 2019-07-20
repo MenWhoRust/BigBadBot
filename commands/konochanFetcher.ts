@@ -1,6 +1,8 @@
 import { ICommand, IKonachanPostsCollection } from './../interfaces/';
 import axios from 'axios';
 import { parseString } from 'xml2js';
+import { RichEmbed } from 'discord.js';
+import { randomBytes } from 'crypto';
 
 const command: ICommand = {
     name: 'wall',
@@ -10,19 +12,32 @@ const command: ICommand = {
 
 const baseUrl: string = 'https://konachan.com/post.xml?limit=1&page=';
 
-export async function fetchWallpaper(args: string): Promise<string> {
+export async function fetchWallpaper(args: string): Promise<RichEmbed> {
     let { data } = await axios.get(baseUrl);
+    let posts: IKonachanPostsCollection;
 
-    console.log(data);
-    parseString(
-        data,
-        { mergeAttrs: true, explicitArray: false, explicitRoot: false },
-        (err, result: IKonachanPostsCollection) => {
-            console.log(result.count);
-        }
-    );
+    posts = await parseXml(data);
 
-    return '';
+    let embed: RichEmbed = new RichEmbed();
+    embed.setAuthor(posts.post.author);
+    embed.setURL(posts.post.source);
+    embed.setImage(posts.post.file_url);
+    embed.addField('Rating', getHumanReadableRating(posts.post.rating));
+    embed.addField('Tags', posts.post.tags, false);
+    return embed;
+}
+
+function getHumanReadableRating(rating: string): string {
+    switch (rating) {
+        case 's':
+            return 'Safe';
+        case 'q':
+            return 'Questionable';
+        case 'e':
+            return 'Explicit';
+        default:
+            return '';
+    }
 }
 
 function getRating(flags: string): string {
@@ -50,5 +65,16 @@ function getFlagArray(query: string): number[] {
         Number(query.includes('e')),
     ];
 }
-
+function parseXml(strToParse: string): Promise<IKonachanPostsCollection> {
+    return new Promise<IKonachanPostsCollection>((resolve, reject) => {
+        parseString(
+            strToParse,
+            { mergeAttrs: true, explicitArray: false, explicitRoot: false },
+            (err, result: IKonachanPostsCollection) => {
+                if (err) return reject(err);
+                resolve(result);
+            }
+        );
+    });
+}
 export default command;
