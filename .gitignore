@@ -1,3 +1,6 @@
-node_modules
-env.ts
-src
+
+\.idea/
+
+BigBadBot/bin/
+
+BigBadBot/obj/
