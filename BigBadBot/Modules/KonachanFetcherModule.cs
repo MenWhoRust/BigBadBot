@@ -15,26 +15,26 @@ namespace BigBadBot.Modules
 {
     public class KonachanFetcherModule: ModuleBase<SocketCommandContext>
     {
-        private string baseUrl = "https://konachan.com/post.xml?limit=1&page=";
-        
-        
+        private const string BASE_URL = "https://konachan.com/post.xml?limit=1&page=";
+
+
         [Command("wall")]
         public async Task FetchWallpaper(params string[] args)
         {
             string tags = GetTagsString(args.ToList());
-            
+
             int postCount = (await GetPosts(tags))?.Count ?? 0;
             if (postCount <= 0)
             {
                 throw new Exception("No posts found with the given tag");
             }
-            
-            
+
+
             int page = new RealRandom().Next(postCount);
 
             KonachanRoot posts = await GetPosts(tags, page);
 
-            var embed = new EmbedBuilder()
+            Embed embed = new EmbedBuilder()
                 .WithImageUrl(posts.KonachanPost.FileUrl)
                 .WithDescription(posts.KonachanPost.Tags)
                 .Build();
@@ -46,16 +46,15 @@ namespace BigBadBot.Modules
 
         private async Task<KonachanRoot> GetPosts(string tags, int page = 1)
         {
-            string queryUrl = $"{baseUrl}{page}&{tags}";
-                using (var client = new HttpClient())
+            string queryUrl = $"{BASE_URL}{page}&{tags}";
+                using (HttpClient client = new HttpClient())
                 {
                     HttpResponseMessage responseMessage = await client.GetAsync(queryUrl);
-                    if (responseMessage.IsSuccessStatusCode)
-                    {
-                        KonachanRoot konachanRoot = XmlHelper.DeserializeFromXmlString<KonachanRoot>(await responseMessage.Content.ReadAsStringAsync());
-                        return konachanRoot;
-                    }
-                    return null;
+
+                    if (!responseMessage.IsSuccessStatusCode) return null;
+
+                    KonachanRoot konachanRoot = XmlHelper.DeserializeFromXmlString<KonachanRoot>(await responseMessage.Content.ReadAsStringAsync());
+                    return konachanRoot;
 
                 }
 
@@ -63,51 +62,51 @@ namespace BigBadBot.Modules
 
         private string GetTagsString(List<string> args)
         {
-            var ratingRegex = new Regex(@"\b(?!(?:.B)*(.)(?:B.)*\1)[sqe]+\b");
-            var ratingArgs = args.FirstOrDefault(s => ratingRegex.IsMatch(s)) ?? "";
+            Regex ratingRegex = new Regex(@"\b(?!(?:.B)*(.)(?:B.)*\1)[sqe]+\b");
+            string ratingArgs = args.FirstOrDefault(s => ratingRegex.IsMatch(s)) ?? "";
 
             if (!string.IsNullOrWhiteSpace(ratingArgs))
             {
                 args.Remove(ratingArgs);
                 args.TrimExcess();
             }
-            
-         
 
-            var ratingString = string.Empty;
+
+
+            string ratingString = string.Empty;
 
             if (!string.IsNullOrWhiteSpace(ratingArgs))
             {
                 ratingString = GetRating(ratingArgs);
             }
-            
+
             string tags = string.Empty;
             if (args.Count > 0)
                 tags = string.Join('+', args);
 
             if (!string.IsNullOrWhiteSpace(tags) && !string.IsNullOrWhiteSpace(ratingString))
                 tags = "+" + tags;
-            
-            
-            
+
+
+
             return "tags=" +  ratingString + tags;
 
         }
 
         private string GetRating(string ratingArgs)
         {
-            var flagArr = GetFlagArray(ratingArgs);
+            int[] flagArr = GetFlagArray(ratingArgs);
             if (flagArr.Length > 3) return "";
 
             char[] konaFlags = {'s', 'q', 'e'};
 
-            var sum = flagArr.Aggregate(0, (a, b) => a+b);
-            var isNoTagRequired = sum == 3 || sum == 0;
-            var isNegated = sum == 2;
+            int sum = flagArr.Aggregate(0, (a, b) => a+b);
+            bool isNoTagRequired = sum == 3 || sum == 0;
+            bool isNegated = sum == 2;
 
             if (isNoTagRequired) return "";
 
-            var rating = isNegated ? "-" : "";
+            string rating = isNegated ? "-" : "";
             rating += "rating:";
             rating += konaFlags[isNegated ? Array.IndexOf(flagArr, 0) : Array.IndexOf(flagArr, 1)];
 
