@@ -8,25 +8,28 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using BigBadBot.Helpers;
 using BigBadBot.Models;
-using Discord;
-using Discord.Commands;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 
 namespace BigBadBot.Modules
 {
-    public class KonachanFetcherModule: ModuleBase<SocketCommandContext>
+    public class KonachanFetcherModule
     {
         private const string BASE_URL = "https://konachan.com/post.xml?limit=1&page=";
 
 
         [Command("wall")]
-        public async Task FetchWallpaper(params string[] args)
+        [Cooldown(1, 100, CooldownBucketType.User)]
+        public async Task FetchWallpaper(CommandContext ctx, params string[] args)
         {
+            await ctx.TriggerTypingAsync();
             string tags = GetTagsString(args.ToList());
 
             int postCount = (await GetPosts(tags))?.Count ?? 0;
             if (postCount <= 0)
             {
-                await ReplyAsync("No posts found with the given tag");
+                await ctx.RespondAsync("No posts found with the given tag");
                 return;
             }
 
@@ -35,7 +38,7 @@ namespace BigBadBot.Modules
 
             KonachanRoot posts = await GetPosts(tags, page);
 
-            Embed embed = new EmbedBuilder()
+            DiscordEmbed embed = new DiscordEmbedBuilder()
                 .WithImageUrl(posts.KonachanPost.FileUrl)
                 .WithAuthor(posts.KonachanPost.Author)
                 .WithDescription(
@@ -46,7 +49,7 @@ namespace BigBadBot.Modules
                 .Build();
 
 
-            await ReplyAsync(embed: embed);
+            await ctx.RespondAsync(embed: embed);
 
         }
 
