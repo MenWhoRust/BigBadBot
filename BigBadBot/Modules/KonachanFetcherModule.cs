@@ -26,7 +26,8 @@ namespace BigBadBot.Modules
             int postCount = (await GetPosts(tags))?.Count ?? 0;
             if (postCount <= 0)
             {
-                throw new Exception("No posts found with the given tag");
+                await ReplyAsync("No posts found with the given tag");
+                return;
             }
 
 
@@ -36,7 +37,12 @@ namespace BigBadBot.Modules
 
             Embed embed = new EmbedBuilder()
                 .WithImageUrl(posts.KonachanPost.FileUrl)
-                .WithDescription(posts.KonachanPost.Tags)
+                .WithAuthor(posts.KonachanPost.Author)
+                .WithDescription(
+                    $"**Rating:** {posts.KonachanPost.Rating.ToUpper()}\n" +
+                    $"**Score:** {posts.KonachanPost.Score}\n" +
+                    $"**Tags:** {posts.KonachanPost.Tags}"
+                    )
                 .Build();
 
 

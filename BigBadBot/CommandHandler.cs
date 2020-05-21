@@ -30,7 +30,7 @@ namespace BigBadBot
 
             var argPos = 0;
             
-            if(!(message.HasCharPrefix('}', ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos)) || message.Author.IsBot)
+            if(!(message.HasStringPrefix(">>", ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos)) || message.Author.IsBot)
                 return;
             
             var context = new SocketCommandContext(_client, message);
@@ -38,7 +38,12 @@ namespace BigBadBot
 
             try
             {
-                await _commands.ExecuteAsync(context, argPos, null);
+                if(_commands.Search(context, argPos).IsSuccess)
+                    await _commands.ExecuteAsync(context, argPos, null);
+                else
+                    await context.Channel.SendMessageAsync(
+                        $"{message.Author.Mention} Sorry I don't know what that means");
+                
             }
             catch (Exception e)
             {
