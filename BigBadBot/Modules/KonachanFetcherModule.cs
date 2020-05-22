@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using BigBadBot.Enums;
 using BigBadBot.Helpers;
 using BigBadBot.Models;
 using DSharpPlus.CommandsNext;
@@ -20,7 +21,7 @@ namespace BigBadBot.Modules
 
 
         [Command("wall")]
-        [Cooldown(1, 100, CooldownBucketType.User)]
+        [Cooldown(1, 5, CooldownBucketType.User)]
         public async Task FetchWallpaper(CommandContext ctx, params string[] args)
         {
             await ctx.TriggerTypingAsync();
@@ -33,16 +34,23 @@ namespace BigBadBot.Modules
                 return;
             }
 
-
             int page = new RealRandom().Next(postCount);
 
             KonachanRoot posts = await GetPosts(tags, page);
+
+            ERating rating = posts.KonachanPost.Rating switch
+            {
+                "e" => ERating.Explicit,
+                "q" => ERating.Questionable,
+                "s" => ERating.Safe,
+                _ => ERating.Safe
+            };
 
             DiscordEmbed embed = new DiscordEmbedBuilder()
                 .WithImageUrl(posts.KonachanPost.FileUrl)
                 .WithAuthor(posts.KonachanPost.Author)
                 .WithDescription(
-                    $"**Rating:** {posts.KonachanPost.Rating.ToUpper()}\n" +
+                    $"**Rating:** {rating}\n" +
                     $"**Score:** {posts.KonachanPost.Score}\n" +
                     $"**Tags:** {posts.KonachanPost.Tags}"
                     )
